@@ -20,10 +20,8 @@ class BasePlayer(object):
 
 
 class Player(BasePlayer):
-    '''
-    Your strategy starts here.
-    '''
 
+    # For reference
     payoff_table = [
         [0, -3],  # h,h  h,s
         [1, -2]   # s,h  s,s
@@ -85,17 +83,12 @@ class Player(BasePlayer):
         return decisions
 
     def hunt_outcomes(self, food_earnings):
-        '''Required function defined in the rules'''
-
-        # For each outcome, keep up a list of how that decision has been going for us.
+        '''For each outcome, keep up a list of how that decision has been going for us.'''
         for idx, decision in enumerate(self.last_decisions):
             self.past_performance[decision] += food_earnings[idx]
         pass
 
     def round_end(self, award, m, number_hunters):
-        '''Required function defined in the rules'''
-        self.was_awarded = award > 0
-        self.last_number_hunters = number_hunters
         pass
 
     #
