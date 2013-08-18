@@ -34,8 +34,8 @@ def eval_func(chromosome):
 # Enable the pyevolve logging system
 pyevolve.logEnable()
 
-# Genome instance, 1D List of 6 elements
-genome = G1DList.G1DList(6)
+# Genome instance, 1D List of 7 elements
+genome = G1DList.G1DList(7)
 
 # Sets the range max and min of the 1D List
 bestScore = len(player_list) * len(player_list) + 1  # run forever
@@ -56,15 +56,14 @@ ga.setCrossoverRate(1.0)
 ga.setMutationRate(0.08)
 ga.setPopulationSize(80)
 ga.setGenerations(500)
-ga.setMultiProcessing(False)
+ga.setMultiProcessing(False)  # buggy when True
 
 # ga.terminationCriteria.set(GSimpleGA.RawScoreCriteria)
 
 # Sets the DB Adapter, the resetDB flag will make the Adapter recreate
-# the database and erase all data every run, you should use this flag
-# just in the first time, after the pyevolve.db was created, you can
-# omit it.
-sqlite_adapter = DBAdapters.DBSQLite(identify="ex1", resetDB=False)
+# the database and erase all data every run. Doesn't seem to actually
+# use the DB even when False.
+sqlite_adapter = DBAdapters.DBSQLite(identify="ex1", resetDB=True)
 ga.setDBAdapter(sqlite_adapter)
 
 # Do the evolution, with stats dump

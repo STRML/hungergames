@@ -1,17 +1,7 @@
-import random
-try:
-    import numpypy
-except ImportError:
-    pass
 import numpy
 
 
 class BasePlayer(object):
-    '''
-    Base class so I don't have to repeat bookkeeping stuff.
-    Do not edit unless you're working on the simulation.
-    '''
-
     def __str__(self):
         try:
             return self.name
@@ -42,24 +32,15 @@ class Player(BasePlayer):
     '''
     A chromosome contains a number of ints deciding behavior.
     These are weights between 0 and 100.
-    We want to decide on the following data:
+    Given these weights, we execute a number of strategy functions. Each function returns
+    1 (for 'hunt') or 0. The results are multplied by the specified weight in the chromosome
+    and summed. A sum >= 100 indicates a hunt.
 
-    * current_food
-    * round_number (not sure if useful)
-    * current_reputation (not sure if useful)
-    * m
-    * player_reputations
-    # was_awarded (whether or not the last round resulted in a common good award)
-    # last_number_hunters - how many bots hunted in the last round.
-
-    Each individual decision should not be state-based, it should be based entirely on the
-    inputs at hand.
-
-
-    Should we use anything passed by hunt_outcomes or round_end?
+    Best chromosomes in our longest tests: [15,15,13,15,15,14,15], [1,1,1,1,1,1,1]
+    This suggests that slacking is the optimal strategy.
     '''
 
-    def __init__(self, chromosome):
+    def __init__(self, chromosome=[1, 1, 1, 1, 1, 1, 1]):
         self.name = "GA Player"
         assert chromosome and len(chromosome) > 0, "A chromosome must be provided"
         self.chromosome = chromosome
@@ -68,7 +49,9 @@ class Player(BasePlayer):
             self.mean_reputation_hunting,
             self.median_reputation_hunting,
             self.maintain_average_reputation,
-            self.evaluate_the_past
+            self.evaluate_the_past,
+            self.hunt_in_medium_rep,
+            self.achieve_public_good
         ]
         self.past_performance = {'h': 0, 's': 0}
 
@@ -79,7 +62,6 @@ class Player(BasePlayer):
         args = locals()
 
         decisions = []
-        max_score = len(self.functions) * 100
 
         # For each reputation, make a choice.
         for idx, reputation in enumerate(player_reputations):
@@ -92,8 +74,8 @@ class Player(BasePlayer):
             for idx, function in enumerate(self.functions):
                 score += self.weight_choice(function, args, self.chromosome[idx])
 
-            # If our score is greater than max_score / 2, hunt.
-            if score > max_score / 2:
+            # If our score is gte than max_score / 2, hunt.
+            if score >= 100:
                 decisions.append('h')
             # Otherwise, slack
             else:
@@ -119,11 +101,6 @@ class Player(BasePlayer):
     #
     # Utility functions
     #
-
-    # Given a threshold between 0 and 100, roll the dice. E.g. if the threshold is 80, 80% of the time
-    # this will return True.
-    def roll_dice(self, threshold):
-        return random.randint(0, 100) < threshold
 
     # Run a given strategy. Weight its decision by the passed in weight (defined in chromosome).
     # A 'hunt' is 1, a 'slack' is 0.
@@ -169,3 +146,16 @@ class Player(BasePlayer):
             better for us, do that. '''
         return 'h' if self.past_performance['h'] > self.past_performance['s'] else 's'
 
+    def hunt_in_medium_rep(self, args):
+        ''' Slack if our opponent is a slacker, slack if he's a known hunter (and collect the food),
+            hunt in the middle. '''
+        op_rep = args['opponent_reputation']
+        return 'h' if op_rep > .4 and op_rep < .7 else 's'
+
+    def achieve_public_good(self, args):
+        ''' Hunt when necessary to achieve the public good. This is a group survival strategy. '''
+        rep = args['player_reputations']
+        probable_hunts = numpy.mean(rep) * (len(rep) - 1) ** 2
+        hunt_difference = args['m'] - probable_hunts
+
+        return 'h' if hunt_difference > 0 else 's'
