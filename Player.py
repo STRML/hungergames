@@ -67,7 +67,7 @@ class Player(BasePlayer):
             self.reputation_based_hunting,
             self.mean_reputation_hunting,
             self.median_reputation_hunting,
-            self.maintain_reputation,
+            self.maintain_average_reputation,
             self.evaluate_the_past
         ]
         self.past_performance = {'h': 0, 's': 0}
@@ -79,7 +79,7 @@ class Player(BasePlayer):
         args = locals()
 
         decisions = []
-        max_score = 100
+        max_score = len(self.functions) * 100
 
         # For each reputation, make a choice.
         for idx, reputation in enumerate(player_reputations):
@@ -131,6 +131,7 @@ class Player(BasePlayer):
         decision = 1 if strategyFunction(args) == 'h' else 0
         return weight * decision
 
+    # Defining this because numpypy.median is not implemented
     def median(self, numbers):
         "Return the median of the list of numbers."
         # Sort the list and take the middle element.
@@ -147,8 +148,8 @@ class Player(BasePlayer):
     #
 
     def reputation_based_hunting(self, args):
-        ''' Reputation-based hunting. This will hunt if the opponent's reputation is above a certain value. '''
-        return 'h' if args['opponent_reputation'] > 0.5 else 's'
+        ''' Reputation-based hunting. This will hunt if the opponent's reputation is above ours. '''
+        return 'h' if args['opponent_reputation'] > args['current_reputation'] else 's'
 
     def mean_reputation_hunting(self, args):
         ''' Hunt if an opponent's reputation is above average, slack otherwise '''
@@ -159,9 +160,9 @@ class Player(BasePlayer):
         # numpypy doesn't have median
         return 'h' if args['opponent_reputation'] > self.median(args['player_reputations']) else 's'
 
-    def maintain_reputation(self, args):
-        ''' Attempt to keep our reputation above a certain value. '''
-        return 'h' if args['current_reputation'] > 0.5 else 's'
+    def maintain_average_reputation(self, args):
+        ''' Attempt to keep our reputation above a certain the mean. '''
+        return 'h' if args['current_reputation'] < numpy.mean(args['player_reputations']) else 's'
 
     def evaluate_the_past(self, args):
         ''' Evaluate how it's been going when hunting and slacking in the past. If hunting has been

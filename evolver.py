@@ -9,8 +9,16 @@ from Game import Game
 
 # Enemy players.
 player_list = [
-    Pushover(), Freeloader(), Alternator(), MaxRepHunter(), Random(.2), Random(.8),
-    FairHunter(), BoundedHunter(0.4, 0.6), BoundedHunter(0.6, 1), AverageHunter()
+    Pushover(),
+    Freeloader(),
+    Alternator(),
+    MaxRepHunter(),
+    Random(.2),
+    Random(.8),
+    FairHunter(),
+    BoundedHunter(0.4, 0.6),
+    BoundedHunter(0.6, 1),
+    AverageHunter()
 ]
 
 
@@ -56,7 +64,7 @@ ga.setMultiProcessing(False)
 # the database and erase all data every run, you should use this flag
 # just in the first time, after the pyevolve.db was created, you can
 # omit it.
-sqlite_adapter = DBAdapters.DBSQLite(identify="ex1", resetDB=True)
+sqlite_adapter = DBAdapters.DBSQLite(identify="ex1", resetDB=False)
 ga.setDBAdapter(sqlite_adapter)
 
 # Do the evolution, with stats dump
