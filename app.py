@@ -7,7 +7,8 @@ from Player import Player
 
 
 # Change these to edit the default Game parameters
-DEFAULT_VERBOSITY = True
+DEFAULT_VERBOSITY = False
+DEFAULT_QUIET = False
 DEFAULT_MIN_ROUNDS = 300
 DEFAULT_AVERAGE_ROUNDS = 1000
 DEFAULT_END_EARLY = False

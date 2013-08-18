@@ -6,7 +6,8 @@ from Player import Player
 # Primary engine for the game simulation. You shouldn't need to edit
 # any of this if you're just testing strategies.
 
-def payout(s1,s2):
+
+def payout(s1, s2):
     if s1 == 'h':
         if s2 == 'h':
             return 0
@@ -63,9 +64,10 @@ class Game(object):
     to run one round at a time.
     
     See app.py for a bare-minimum test game.
-    '''   
-    def __init__(self, players, verbose=True, min_rounds=300, average_rounds=1000, end_early=False):
+    '''
+    def __init__(self, players, verbose=True, min_rounds=300, average_rounds=1000, end_early=False, quiet=False):
         self.verbose = verbose
+        self.quiet = quiet
         assert average_rounds > min_rounds, "average_rounds must be greater than min_rounds"
         self.max_rounds = min_rounds + int(random.expovariate(1/(average_rounds-min_rounds)))
         self.round = 0
@@ -74,12 +76,13 @@ class Game(object):
         
         start_food = 300*(len(players)-1)
         
-        self.players = [GamePlayer(self,p,start_food) for p in players]
+        self.players = [GamePlayer(self, p, start_food) for p in players]
+        self.ranking = []
 
         if self.verbose:
-            print("Game parameters:\n # players: %d\n verbose: %s\n " \
-                  "min_rounds: %d\n average_rounds: %d\n " \
-                  "end_early: %s\n" % (len(players), verbose, \
+            print("Game parameters:\n # players: %d\n verbose: %s\n "
+                  "min_rounds: %d\n average_rounds: %d\n "
+                  "end_early: %s\n" % (len(players), verbose,
                                        min_rounds, average_rounds,
                                        end_early))
 
@@ -96,7 +99,7 @@ class Game(object):
             
         
     def play_round(self):
-        # Get beginning of round stats        
+        # Get beginning of round stats
         self.round += 1
         if(self.verbose):
             print ("\nBegin Round " + str(self.round) + ":")
@@ -108,11 +111,11 @@ class Game(object):
         
         # Get player strategies
         strategies = []
-        for i,p in enumerate(self.players):
+        for i, p in enumerate(self.players):
             opp_reputations = reputations[:i]+reputations[i+1:]
             strategy = p.player.hunt_choices(self.round, p.food, p.rep, m, opp_reputations)
 
-            strategy.insert(i,'s')
+            strategy.insert(i, 's')
             strategies.append(strategy)
 
         # Perform the hunts
@@ -121,7 +124,7 @@ class Game(object):
         results = [[] for j in range(self.P)]
         for i in range(self.P):
             for j in range(self.P):
-                if i!=j:
+                if i != j:
                     results[i].append(payout(strategies[i][j], strategies[j][i]))
                 
         total_hunts = sum(s.count('h') for s in strategies)
@@ -154,44 +157,53 @@ class Game(object):
                    
         
         if self.game_over():
-            print ("Game Completed after {} rounds".format(self.round))
+            if not self.quiet:
+                print ("Game Completed after {} rounds".format(self.round))
             raise StopIteration
             
-        
-    def game_over(self):        
+    
+    def game_over(self):
+        '''
+        Check if game is over. It's over if we've gone over max_rounds or there are < 2 player left.
+        '''
         starved = [p for p in self.players if p.food <= 0]
         quit = False
 
         for p in starved:
-            print ("{} has starved and been eliminated in round {}".format(p.player, self.round))
+            if not self.quiet:
+                print ("{} has starved and been eliminated in round {}".format(p.player, self.round))
 
             if isinstance(p.player, Player) and self.end_early:
                 quit = True
 
+        self.ranking.extend([str(p.player) for p in starved])
         self.players = [p for p in self.players if p.food > 0]
         
         return (self.P < 2) or (self.round > self.max_rounds) or quit
         
-        
+
     def play_game(self):
         '''
         Preferred way to run the game to completion
         Written this way so that I can step through rounds one at a time
         '''
-        print ("Playing the game to the end:")
+        if not self.quiet:
+            print ("Playing the game to the end:")
 
         while True:
             try:
                 self.play_round()
             except StopIteration:
-                if len(self.players) <= 0:
-                    print ("Everyone starved")
-                elif (len(self.players) == 1):
-                    print ("The winner is: ", self.players[0].player)
-                else:
-                    survivors = sorted(self.players, key=lambda player: player.food, reverse=True)
-                    print ("The winner is: ", survivors[0].player)
-                    print ("Multiple survivors:")
-                    print (survivors)
+                survivors = sorted(self.players, key=lambda player: player.food, reverse=True)
+                self.ranking.extend([str(s.player) for s in survivors if True])
+                if not self.quiet:
+                    if len(self.players) <= 0:
+                        print ("Everyone starved")
+                    elif (len(self.players) == 1):
+                        print ("The winner is: ", self.players[0].player)
+                    else:
+                        print ("The winner is: ", survivors[0].player)
+                        print ("Multiple survivors:")
+                        print (survivors)
+                return self.ranking
                 break
-        
